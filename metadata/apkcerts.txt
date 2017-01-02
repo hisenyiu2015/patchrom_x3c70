@@ -37,7 +37,7 @@ name="fastdormancy.apk" certificate="build/target/product/security/platform.x509
 name="FeedBack.apk" certificate="build/target/product/security/platform.x509.pem" private_key="build/target/product/security/platform.pk8"
 name="FingerprintServiceExtension.apk" certificate="build/target/product/security/platform.x509.pem" private_key="build/target/product/security/platform.pk8"
 name="FMService.apk" certificate="build/target/product/security/platform.x509.pem" private_key="build/target/product/security/platform.pk8"
-name="framework-res.apk.apk" certificate="build/target/product/security/platform.x509.pem" private_key="build/target/product/security/platform.pk8"
+name="lenovo-res.apk" certificate="build/target/product/security/platform.x509.pem" private_key="build/target/product/security/platform.pk8"
 name="framework-res.apk" certificate="build/target/product/security/platform.x509.pem" private_key="build/target/product/security/platform.pk8"
 name="FusedLocation.apk" certificate="build/target/product/security/platform.x509.pem" private_key="build/target/product/security/platform.pk8"
 name="Galaxy4.apk" certificate="build/target/product/security/shared.x509.pem" private_key="build/target/product/security/shared.pk8"
