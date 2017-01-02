@@ -13,6 +13,9 @@ cd - > /dev/null
 if [ ! -f $TARGET_BOOT_DIR/ramdisk/init_vendor ];then
 mv $TARGET_BOOT_DIR/ramdisk/init $TARGET_BOOT_DIR/ramdisk/init_vendor
 fi
+if [ -a $TARGET_BOOT_DIR/ramdisk/verity_key ];then
+rm -rf $TARGET_BOOT_DIR/ramdisk/verity_key
+fi
 cp -f $PREBUILT_BOOT_DIR/$TARGET_BIT/init $TARGET_BOOT_DIR/ramdisk/init
 if [ -d overlay/boot/ramdisk ];then
 cp -rf overlay/boot/ramdisk/* $TARGET_BOOT_DIR/ramdisk/
