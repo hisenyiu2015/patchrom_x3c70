@@ -6,3 +6,4 @@ then
    cp metadata/updater out/target_files/OTA/bin
 fi
 
+cp -f patchrom/file_contexts out/target_files/META/
