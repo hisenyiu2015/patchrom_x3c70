@@ -476,25 +476,21 @@
     .param p0, "argv"    # [Ljava/lang/String;
 
     .prologue
-    .line 606
     :try_start_0
     invoke-static {}, Lcom/android/internal/os/RuntimeInit;->enableDdms()V
 
-    .line 608
     invoke-static {}, Lcom/android/internal/os/SamplingProfilerIntegration;->start()V
 
-    .line 610
+    invoke-static {}, Lmiui/patchrom/ClassHook;->initCoreHook()V
+
     const/4 v5, 0x0
 
-    .line 611
     .local v5, "startSystemServer":Z
     const-string v4, "zygote"
 
-    .line 612
     .local v4, "socketName":Ljava/lang/String;
     const/4 v0, 0x0
 
-    .line 613
     .local v0, "abiList":Ljava/lang/String;
     const/4 v3, 0x1
 
