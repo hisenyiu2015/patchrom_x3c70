@@ -1154,7 +1154,7 @@
 
     cmp-long v18, v14, v18
 
-    if-lez v18, :cond_2
+    if-lez v18, :cond_miui_0
 
     .line 5238
     array-length v0, v6
@@ -1204,7 +1204,7 @@
 
     .line 5240
     .local v7, "didRead":I
-    if-ltz v7, :cond_0
+    if-ltz v7, :cond_miui_0
 
     move-object/from16 v0, p0
 
@@ -1225,7 +1225,6 @@
     iput-wide v0, v2, Lcom/android/server/backup/BackupManagerService$FullRestoreEngine;->mBytes:J
 
     .line 5241
-    :cond_0
     const/16 v18, 0x0
 
     move/from16 v0, v18
@@ -1251,7 +1250,7 @@
     goto :goto_1
 
     .line 5244
-    :cond_2
+    :cond_miui_0
     invoke-virtual {v5}, Ljava/io/FileOutputStream;->close()V
 
     .line 5247
