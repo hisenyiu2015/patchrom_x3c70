@@ -1,0 +1,898 @@
+From be0a759d0de006bd9a22bf0116a8230d016dcfca Mon Sep 17 00:00:00 2001
+From: garyyiu2015 <garyyiu2015@gmail.com>
+Date: Fri, 23 Dec 2016 23:32:00 +0800
+Subject: [PATCH] fix miui edition xposed framework install
+
+---
+ .../android/app/ApplicationPackageManager.smali    |   4 +
+ framework/smali/android/app/ContextImpl.smali      |   6 +
+ framework/smali/android/app/LoadedApk.smali        |   6 +
+ .../smali/android/content/res/AssetManager.smali   |   4 +
+ .../smali/android/content/res/Configuration.smali  | 301 ++++-----------------
+ .../android/content/res/Resources$Theme.smali      |  31 ++-
+ .../smali/android/content/res/Resources.smali      |  37 ++-
+ .../smali/android/content/res/TypedArray.smali     |   4 +-
+ framework/smali/android/graphics/Bitmap.smali      |   2 +-
+ 9 files changed, 143 insertions(+), 252 deletions(-)
+
+
+--- a/framework/smali/android/app/ApplicationPackageManager.smali
++++ b/framework/smali/android/app/ApplicationPackageManager.smali
+@@ -4715,6 +4715,10 @@
+     move-result-object v8
+ 
+     .local v8, "r":Landroid/content/res/Resources;
++    iget-object v0, p1, Landroid/content/pm/ApplicationInfo;->packageName:Ljava/lang/String;
++
++    invoke-static {v8, v0}, Landroid/miui/ResourcesManager;->initMiuiResource(Landroid/content/res/Resources;Ljava/lang/String;)V
++
+     if-nez v8, :cond_0
+ 
+     new-instance v0, Landroid/content/pm/PackageManager$NameNotFoundException;
+
+--- a/framework/smali/android/app/ContextImpl.smali
++++ b/framework/smali/android/app/ContextImpl.smali
+@@ -338,6 +338,12 @@
+ 
+     move-result-object v10
+ 
++    iget-object v1, p0, Landroid/app/ContextImpl;->mPackageInfo:Landroid/app/LoadedApk;
++
++    iget-object v1, v1, Landroid/app/LoadedApk;->mPackageName:Ljava/lang/String;
++
++    invoke-static {v10, v1}, Landroid/miui/ResourcesManager;->initMiuiResource(Landroid/content/res/Resources;Ljava/lang/String;)V
++
+     :cond_4
+     iput-object v10, p0, Landroid/app/ContextImpl;->mResources:Landroid/content/res/Resources;
+ 
+
+--- a/framework/smali/android/app/LoadedApk.smali
++++ b/framework/smali/android/app/LoadedApk.smali
+@@ -2439,6 +2439,12 @@
+ 
+     iput-object v0, p0, Landroid/app/LoadedApk;->mResources:Landroid/content/res/Resources;
+ 
++    iget-object v0, p0, Landroid/app/LoadedApk;->mResources:Landroid/content/res/Resources;
++
++    iget-object v1, p0, Landroid/app/LoadedApk;->mPackageName:Ljava/lang/String;
++
++    invoke-static {v0, v1}, Landroid/miui/ResourcesManager;->initMiuiResource(Landroid/content/res/Resources;Ljava/lang/String;)V
++
+     :cond_0
+     iget-object v0, p0, Landroid/app/LoadedApk;->mResources:Landroid/content/res/Resources;
+ 
+
+--- a/framework/smali/android/content/res/AssetManager.smali
++++ b/framework/smali/android/content/res/AssetManager.smali
+@@ -134,6 +134,8 @@
+ 
+     invoke-static {}, Landroid/content/res/AssetManager;->ensureSystemAssets()V
+ 
++    invoke-static {p0}, Landroid/miui/ResourcesManager;->addSystemAssets(Landroid/content/res/AssetManager;)V
++
+     monitor-exit p0
+ 
+     return-void
+@@ -183,6 +185,8 @@
+ 
+     invoke-virtual {p0, v0}, Landroid/content/res/AssetManager;->addAssetPath(Ljava/lang/String;)I
+ 
++    invoke-static {p0}, Landroid/miui/ResourcesManager;->addSystemAssets(Landroid/content/res/AssetManager;)V
++
+     return-void
+ .end method
+ 
+
+--- a/framework/smali/android/content/res/Configuration.smali
++++ b/framework/smali/android/content/res/Configuration.smali
+@@ -260,8 +260,6 @@
+ 
+ .field public locale:Ljava/util/Locale;
+ 
+-.field public mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
+-
+ .field public mcc:I
+ 
+ .field public mnc:I
+@@ -315,15 +313,11 @@
+     .prologue
+     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
+ 
+-    const/4 v0, 0x0
+-
+-    iput-object v0, p0, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
++    new-instance v0, Landroid/content/res/MiuiConfiguration;
+ 
+-    new-instance v0, Landroid/content/res/ThemeExtraConfiguration;
++    invoke-direct {v0}, Landroid/content/res/MiuiConfiguration;-><init>()V
+ 
+-    invoke-direct {v0}, Landroid/content/res/ThemeExtraConfiguration;-><init>()V
+-
+-    iput-object v0, p0, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
++    iput-object v0, p0, Landroid/content/res/Configuration;->extraConfig:Landroid/content/res/MiuiConfiguration;
+ 
+     invoke-virtual {p0}, Landroid/content/res/Configuration;->setToDefaults()V
+ 
+@@ -337,15 +331,11 @@
+     .prologue
+     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
+ 
+-    const/4 v0, 0x0
+-
+-    iput-object v0, p0, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
++    new-instance v0, Landroid/content/res/MiuiConfiguration;
+ 
+-    new-instance v0, Landroid/content/res/ThemeExtraConfiguration;
++    invoke-direct {v0}, Landroid/content/res/MiuiConfiguration;-><init>()V
+ 
+-    invoke-direct {v0}, Landroid/content/res/ThemeExtraConfiguration;-><init>()V
+-
+-    iput-object v0, p0, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
++    iput-object v0, p0, Landroid/content/res/Configuration;->extraConfig:Landroid/content/res/MiuiConfiguration;
+ 
+     invoke-virtual {p0, p1}, Landroid/content/res/Configuration;->setTo(Landroid/content/res/Configuration;)V
+ 
+@@ -359,15 +349,11 @@
+     .prologue
+     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
+ 
+-    const/4 v0, 0x0
+-
+-    iput-object v0, p0, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
++    new-instance v0, Landroid/content/res/MiuiConfiguration;
+ 
+-    new-instance v0, Landroid/content/res/ThemeExtraConfiguration;
++    invoke-direct {v0}, Landroid/content/res/MiuiConfiguration;-><init>()V
+ 
+-    invoke-direct {v0}, Landroid/content/res/ThemeExtraConfiguration;-><init>()V
+-
+-    iput-object v0, p0, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
++    iput-object v0, p0, Landroid/content/res/Configuration;->extraConfig:Landroid/content/res/MiuiConfiguration;
+ 
+     invoke-virtual {p0, p1}, Landroid/content/res/Configuration;->readFromParcel(Landroid/os/Parcel;)V
+ 
+@@ -699,40 +685,6 @@
+     return-object v0
+ .end method
+ 
+-.method private static getDefaultFontPath()Ljava/lang/String;
+-    .locals 4
+-
+-    .prologue
+-    const/4 v0, 0x0
+-
+-    .local v0, "default_File_font_path":Ljava/lang/String;
+-    const-string v1, "row"
+-
+-    const-string v2, "ro.lenovo.region"
+-
+-    const-string v3, "prc"
+-
+-    invoke-static {v2, v3}, Landroid/os/SystemProperties;->get(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+-
+-    move-result-object v2
+-
+-    invoke-virtual {v1, v2}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+-
+-    move-result v1
+-
+-    if-eqz v1, :cond_0
+-
+-    const-string v0, "/system/fonts/DroidSansFallback.ttf"
+-
+-    :goto_0
+-    return-object v0
+-
+-    :cond_0
+-    const-string v0, "/system/fonts/LenovoFont.ttf"
+-
+-    goto :goto_0
+-.end method
+-
+ .method private static getScreenLayoutNoDirection(I)I
+     .locals 1
+     .param p0, "screenLayout"    # I
+@@ -743,43 +695,6 @@
+     return v0
+ .end method
+ 
+-.method public static getThemeFontName()Ljava/lang/String;
+-    .locals 1
+-
+-    .prologue
+-    invoke-static {}, Landroid/content/res/ThemeExtraConfiguration;->getThemeFontName()Ljava/lang/String;
+-
+-    move-result-object v0
+-
+-    .local v0, "fontName":Ljava/lang/String;
+-    return-object v0
+-.end method
+-
+-.method public static getThemeFontPath()Ljava/lang/String;
+-    .locals 2
+-
+-    .prologue
+-    invoke-static {}, Landroid/content/res/ThemeExtraConfiguration;->getThemeFontPath()Ljava/lang/String;
+-
+-    move-result-object v0
+-
+-    .local v0, "fontPath":Ljava/lang/String;
+-    const-string v1, ""
+-
+-    invoke-virtual {v1, v0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+-
+-    move-result v1
+-
+-    if-eqz v1, :cond_0
+-
+-    invoke-static {}, Landroid/content/res/Configuration;->getDefaultFontPath()Ljava/lang/String;
+-
+-    move-result-object v0
+-
+-    :cond_0
+-    return-object v0
+-.end method
+-
+ .method public static localeToResourceQualifier(Ljava/util/Locale;)Ljava/lang/String;
+     .locals 8
+     .param p0, "locale"    # Ljava/util/Locale;
+@@ -936,7 +851,7 @@
+ .end method
+ 
+ .method public static needNewResources(II)Z
+-    .locals 2
++    .locals 1
+     .param p0, "configChanges"    # I
+     .param p1, "interestingChanges"    # I
+ 
+@@ -945,15 +860,11 @@
+ 
+     or-int/2addr v0, p1
+ 
+-    const/high16 v1, 0x20000000
+-
+-    or-int/2addr v0, v1
+-
+     and-int/2addr v0, p0
+ 
+     if-nez v0, :cond_0
+ 
+-    invoke-static {p0}, Landroid/content/res/ThemeExtraConfiguration;->needNewResources(I)Z
++    invoke-static {p0}, Landroid/content/res/MiuiConfiguration;->needNewResources(I)Z
+ 
+     move-result v0
+ 
+@@ -1989,55 +1900,6 @@
+     .end packed-switch
+ .end method
+ 
+-.method private setThemeFontName(Ljava/lang/String;)V
+-    .locals 1
+-    .param p1, "fontName"    # Ljava/lang/String;
+-
+-    .prologue
+-    iget-object v0, p0, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
+-
+-    if-eqz v0, :cond_0
+-
+-    iget-object v0, p0, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
+-
+-    if-eqz p1, :cond_1
+-
+-    .end local p1    # "fontName":Ljava/lang/String;
+-    :goto_0
+-    iput-object p1, v0, Landroid/content/res/ThemeExtraConfiguration;->mFontName:Ljava/lang/String;
+-
+-    :cond_0
+-    return-void
+-
+-    .restart local p1    # "fontName":Ljava/lang/String;
+-    :cond_1
+-    const-string p1, ""
+-
+-    goto :goto_0
+-.end method
+-
+-.method private setThemeFontPath(ILjava/lang/String;)V
+-    .locals 1
+-    .param p1, "type"    # I
+-    .param p2, "fontPath"    # Ljava/lang/String;
+-
+-    .prologue
+-    const/4 v0, 0x1
+-
+-    if-ne p1, v0, :cond_0
+-
+-    iget-object v0, p0, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
+-
+-    if-eqz v0, :cond_0
+-
+-    iget-object v0, p0, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
+-
+-    iput-object p2, v0, Landroid/content/res/ThemeExtraConfiguration;->mFontPath:Ljava/lang/String;
+-
+-    :cond_0
+-    return-void
+-.end method
+-
+ .method public static writeXmlAttrs(Lorg/xmlpull/v1/XmlSerializer;Landroid/content/res/Configuration;)V
+     .locals 2
+     .param p0, "xml"    # Lorg/xmlpull/v1/XmlSerializer;
+@@ -2475,17 +2337,11 @@
+ 
+     sub-int v2, v3, v4
+ 
+-    iget-object v3, p0, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
++    iget-object v3, p0, Landroid/content/res/Configuration;->extraConfig:Landroid/content/res/MiuiConfiguration;
+ 
+-    if-eqz v3, :cond_0
+-
+-    if-nez v2, :cond_0
++    iget-object v4, p1, Landroid/content/res/Configuration;->extraConfig:Landroid/content/res/MiuiConfiguration;
+ 
+-    iget-object v3, p0, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
+-
+-    iget-object v4, p1, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
+-
+-    invoke-virtual {v3, v4}, Landroid/content/res/ThemeExtraConfiguration;->compareTo(Landroid/content/res/ThemeExtraConfiguration;)I
++    invoke-virtual {v3, v4}, Landroid/content/res/MiuiConfiguration;->compareTo(Landroid/content/res/MiuiConfiguration;)I
+ 
+     move-result v2
+ 
+@@ -2792,21 +2648,16 @@
+     or-int/lit16 v0, v0, 0x1000
+ 
+     :cond_12
+-    iget-object v2, p0, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
+-
+-    if-eqz v2, :cond_13
+-
+-    iget-object v2, p0, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
++    iget-object v2, p0, Landroid/content/res/Configuration;->extraConfig:Landroid/content/res/MiuiConfiguration;
+ 
+-    iget-object v3, p1, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
++    iget-object v3, p1, Landroid/content/res/Configuration;->extraConfig:Landroid/content/res/MiuiConfiguration;
+ 
+-    invoke-virtual {v2, v3}, Landroid/content/res/ThemeExtraConfiguration;->diff(Landroid/content/res/ThemeExtraConfiguration;)I
++    invoke-virtual {v2, v3}, Landroid/content/res/MiuiConfiguration;->diff(Landroid/content/res/MiuiConfiguration;)I
+ 
+     move-result v2
+ 
+     or-int/2addr v0, v2
+ 
+-    :cond_13
+     return v0
+ .end method
+ 
+@@ -3012,9 +2863,9 @@
+ 
+     mul-int/lit8 v1, v0, 0x1f
+ 
+-    iget-object v2, p0, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
++    iget-object v2, p0, Landroid/content/res/Configuration;->extraConfig:Landroid/content/res/MiuiConfiguration;
+ 
+-    invoke-virtual {v2}, Landroid/content/res/ThemeExtraConfiguration;->hashCode()I
++    invoke-virtual {v2}, Landroid/content/res/MiuiConfiguration;->hashCode()I
+ 
+     move-result v2
+ 
+@@ -3191,7 +3042,7 @@
+ 
+     move-result v1
+ 
+-    if-ne v1, v0, :cond_2
++    if-ne v1, v0, :cond_1
+ 
+     :goto_0
+     iput-boolean v0, p0, Landroid/content/res/Configuration;->userSetLocale:Z
+@@ -3298,18 +3149,13 @@
+ 
+     iput v0, p0, Landroid/content/res/Configuration;->seq:I
+ 
+-    iget-object v0, p0, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
++    iget-object v0, p0, Landroid/content/res/Configuration;->extraConfig:Landroid/content/res/MiuiConfiguration;
+ 
+-    if-eqz v0, :cond_1
+-
+-    iget-object v0, p0, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
+-
+-    invoke-virtual {v0, p1}, Landroid/content/res/ThemeExtraConfiguration;->readFromParcel(Landroid/os/Parcel;)V
++    invoke-virtual {v0, p1}, Landroid/content/res/MiuiConfiguration;->readFromParcel(Landroid/os/Parcel;)V
+ 
+-    :cond_1
+     return-void
+ 
+-    :cond_2
++    :cond_1
+     const/4 v0, 0x0
+ 
+     goto :goto_0
+@@ -3458,17 +3304,12 @@
+ 
+     iput v0, p0, Landroid/content/res/Configuration;->seq:I
+ 
+-    iget-object v0, p0, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
+-
+-    if-eqz v0, :cond_1
+-
+-    iget-object v0, p0, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
++    iget-object v0, p0, Landroid/content/res/Configuration;->extraConfig:Landroid/content/res/MiuiConfiguration;
+ 
+-    iget-object v1, p1, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
++    iget-object v1, p1, Landroid/content/res/Configuration;->extraConfig:Landroid/content/res/MiuiConfiguration;
+ 
+-    invoke-virtual {v0, v1}, Landroid/content/res/ThemeExtraConfiguration;->setTo(Landroid/content/res/ThemeExtraConfiguration;)V
++    invoke-virtual {v0, v1}, Landroid/content/res/MiuiConfiguration;->setTo(Landroid/content/res/MiuiConfiguration;)V
+ 
+-    :cond_1
+     return-void
+ .end method
+ 
+@@ -3478,9 +3319,7 @@
+     .prologue
+     const/4 v1, 0x0
+ 
+-    invoke-static {}, Landroid/content/res/ThemeExtraConfiguration;->getFontScale()F
+-
+-    move-result v0
++    const/high16 v0, 0x3f800000    # 1.0f
+ 
+     iput v0, p0, Landroid/content/res/Configuration;->fontScale:F
+ 
+@@ -3528,15 +3367,10 @@
+ 
+     iput v1, p0, Landroid/content/res/Configuration;->seq:I
+ 
+-    iget-object v0, p0, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
+-
+-    if-eqz v0, :cond_0
++    iget-object v0, p0, Landroid/content/res/Configuration;->extraConfig:Landroid/content/res/MiuiConfiguration;
+ 
+-    iget-object v0, p0, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
++    invoke-virtual {v0}, Landroid/content/res/MiuiConfiguration;->setToDefaults()V
+ 
+-    invoke-virtual {v0}, Landroid/content/res/ThemeExtraConfiguration;->setToDefaults()V
+-
+-    :cond_0
+     return-void
+ .end method
+ 
+@@ -3565,7 +3399,7 @@
+ 
+     iget v2, p0, Landroid/content/res/Configuration;->mcc:I
+ 
+-    if-eqz v2, :cond_2
++    if-eqz v2, :cond_1
+ 
+     iget v2, p0, Landroid/content/res/Configuration;->mcc:I
+ 
+@@ -3578,7 +3412,7 @@
+     :goto_0
+     iget v2, p0, Landroid/content/res/Configuration;->mnc:I
+ 
+-    if-eqz v2, :cond_3
++    if-eqz v2, :cond_2
+ 
+     iget v2, p0, Landroid/content/res/Configuration;->mnc:I
+ 
+@@ -3591,7 +3425,7 @@
+     :goto_1
+     iget-object v2, p0, Landroid/content/res/Configuration;->locale:Ljava/util/Locale;
+ 
+-    if-eqz v2, :cond_4
++    if-eqz v2, :cond_3
+ 
+     const-string v2, " "
+ 
+@@ -3620,7 +3454,7 @@
+     :goto_3
+     iget v2, p0, Landroid/content/res/Configuration;->smallestScreenWidthDp:I
+ 
+-    if-eqz v2, :cond_5
++    if-eqz v2, :cond_4
+ 
+     const-string v2, " sw"
+ 
+@@ -3637,7 +3471,7 @@
+     :goto_4
+     iget v2, p0, Landroid/content/res/Configuration;->screenWidthDp:I
+ 
+-    if-eqz v2, :cond_6
++    if-eqz v2, :cond_5
+ 
+     const-string v2, " w"
+ 
+@@ -3654,7 +3488,7 @@
+     :goto_5
+     iget v2, p0, Landroid/content/res/Configuration;->screenHeightDp:I
+ 
+-    if-eqz v2, :cond_7
++    if-eqz v2, :cond_6
+ 
+     const-string v2, " h"
+ 
+@@ -3671,7 +3505,7 @@
+     :goto_6
+     iget v2, p0, Landroid/content/res/Configuration;->densityDpi:I
+ 
+-    if-eqz v2, :cond_8
++    if-eqz v2, :cond_7
+ 
+     const-string v2, " "
+ 
+@@ -3861,19 +3695,14 @@
+     invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+ 
+     :cond_0
+-    iget-object v2, p0, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
+-
+-    if-eqz v2, :cond_1
+-
+-    iget-object v2, p0, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
++    iget-object v2, p0, Landroid/content/res/Configuration;->extraConfig:Landroid/content/res/MiuiConfiguration;
+ 
+-    invoke-virtual {v2}, Landroid/content/res/ThemeExtraConfiguration;->toString()Ljava/lang/String;
++    invoke-virtual {v2}, Landroid/content/res/MiuiConfiguration;->toString()Ljava/lang/String;
+ 
+     move-result-object v2
+ 
+     invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+ 
+-    :cond_1
+     const/16 v2, 0x7d
+ 
+     invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
+@@ -3885,21 +3714,21 @@
+     return-object v2
+ 
+     .end local v0    # "layoutDir":I
+-    :cond_2
++    :cond_1
+     const-string v2, "?mcc"
+ 
+     invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+ 
+     goto/16 :goto_0
+ 
+-    :cond_3
++    :cond_2
+     const-string v2, "?mnc"
+ 
+     invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+ 
+     goto/16 :goto_1
+ 
+-    :cond_4
++    :cond_3
+     const-string v2, " ?locale"
+ 
+     invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+@@ -3928,28 +3757,28 @@
+ 
+     goto/16 :goto_3
+ 
+-    :cond_5
++    :cond_4
+     const-string v2, " ?swdp"
+ 
+     invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+ 
+     goto/16 :goto_4
+ 
+-    :cond_6
++    :cond_5
+     const-string v2, " ?wdp"
+ 
+     invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+ 
+     goto/16 :goto_5
+ 
+-    :cond_7
++    :cond_6
+     const-string v2, " ?hdp"
+ 
+     invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+ 
+     goto/16 :goto_6
+ 
+-    :cond_8
++    :cond_7
+     const-string v2, " ?density"
+ 
+     invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+@@ -4431,7 +4260,7 @@
+ 
+     iget-object v2, p1, Landroid/content/res/Configuration;->locale:Ljava/util/Locale;
+ 
+-    if-eqz v2, :cond_1b
++    if-eqz v2, :cond_1a
+ 
+     iget-object v2, p1, Landroid/content/res/Configuration;->locale:Ljava/util/Locale;
+ 
+@@ -4642,7 +4471,7 @@
+ 
+     and-int/lit16 v2, v2, 0xc0
+ 
+-    if-nez v2, :cond_1c
++    if-nez v2, :cond_1b
+ 
+     iget v2, p0, Landroid/content/res/Configuration;->screenLayout:I
+ 
+@@ -4810,31 +4639,26 @@
+     iput v2, p0, Landroid/content/res/Configuration;->seq:I
+ 
+     :cond_19
+-    iget-object v2, p0, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
++    iget-object v2, p0, Landroid/content/res/Configuration;->extraConfig:Landroid/content/res/MiuiConfiguration;
+ 
+-    if-eqz v2, :cond_1a
++    iget-object v3, p1, Landroid/content/res/Configuration;->extraConfig:Landroid/content/res/MiuiConfiguration;
+ 
+-    iget-object v2, p0, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
+-
+-    iget-object v3, p1, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
+-
+-    invoke-virtual {v2, v3}, Landroid/content/res/ThemeExtraConfiguration;->updateFrom(Landroid/content/res/ThemeExtraConfiguration;)I
++    invoke-virtual {v2, v3}, Landroid/content/res/MiuiConfiguration;->updateFrom(Landroid/content/res/MiuiConfiguration;)I
+ 
+     move-result v2
+ 
+     or-int/2addr v0, v2
+ 
+-    :cond_1a
+     return v0
+ 
+     .end local v1    # "deltaScreenLayoutDir":I
+-    :cond_1b
++    :cond_1a
+     const/4 v2, 0x0
+ 
+     goto/16 :goto_0
+ 
+     .restart local v1    # "deltaScreenLayoutDir":I
+-    :cond_1c
++    :cond_1b
+     iget v2, p1, Landroid/content/res/Configuration;->screenLayout:I
+ 
+     iput v2, p0, Landroid/content/res/Configuration;->screenLayout:I
+@@ -4866,14 +4690,14 @@
+ 
+     iget-object v0, p0, Landroid/content/res/Configuration;->locale:Ljava/util/Locale;
+ 
+-    if-nez v0, :cond_1
++    if-nez v0, :cond_0
+ 
+     invoke-virtual {p1, v1}, Landroid/os/Parcel;->writeInt(I)V
+ 
+     :goto_0
+     iget-boolean v0, p0, Landroid/content/res/Configuration;->userSetLocale:Z
+ 
+-    if-eqz v0, :cond_2
++    if-eqz v0, :cond_1
+ 
+     invoke-virtual {p1, v2}, Landroid/os/Parcel;->writeInt(I)V
+ 
+@@ -4946,18 +4770,13 @@
+ 
+     invoke-virtual {p1, v0}, Landroid/os/Parcel;->writeInt(I)V
+ 
+-    iget-object v0, p0, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
+-
+-    if-eqz v0, :cond_0
+-
+-    iget-object v0, p0, Landroid/content/res/Configuration;->mThemeExtraConfiguration:Landroid/content/res/ThemeExtraConfiguration;
++    iget-object v0, p0, Landroid/content/res/Configuration;->extraConfig:Landroid/content/res/MiuiConfiguration;
+ 
+-    invoke-virtual {v0, p1, p2}, Landroid/content/res/ThemeExtraConfiguration;->writeToParcel(Landroid/os/Parcel;I)V
++    invoke-virtual {v0, p1, p2}, Landroid/content/res/MiuiConfiguration;->writeToParcel(Landroid/os/Parcel;I)V
+ 
+-    :cond_0
+     return-void
+ 
+-    :cond_1
++    :cond_0
+     invoke-virtual {p1, v2}, Landroid/os/Parcel;->writeInt(I)V
+ 
+     iget-object v0, p0, Landroid/content/res/Configuration;->locale:Ljava/util/Locale;
+@@ -4984,11 +4803,11 @@
+ 
+     invoke-virtual {p1, v0}, Landroid/os/Parcel;->writeString(Ljava/lang/String;)V
+ 
+-    goto/16 :goto_0
++    goto :goto_0
+ 
+-    :cond_2
++    :cond_1
+     invoke-virtual {p1, v1}, Landroid/os/Parcel;->writeInt(I)V
+ 
+-    goto/16 :goto_1
++    goto :goto_1
+ .end method
+ .field public extraConfig:Landroid/content/res/MiuiConfiguration;
+
+--- a/framework/smali/android/content/res/Resources$Theme.smali
++++ b/framework/smali/android/content/res/Resources$Theme.smali
+@@ -396,7 +396,13 @@
+ 
+     invoke-static/range {v0 .. v8}, Landroid/content/res/AssetManager;->applyStyle(JIIJ[I[I[I)Z
+ 
+-    return-object v9
++    iget-object v0, p0, Landroid/content/res/Resources$Theme;->this$0:Landroid/content/res/Resources;
++
++    invoke-virtual {v0, v9}, Landroid/content/res/Resources;->loadOverlayTypedArray(Landroid/content/res/TypedArray;)Landroid/content/res/TypedArray;
++
++    move-result-object v0
++
++    return-object v0
+ .end method
+ 
+ .method public obtainStyledAttributes(Landroid/util/AttributeSet;[III)Landroid/content/res/TypedArray;
+@@ -445,7 +451,13 @@
+ 
+     iput-object v11, v9, Landroid/content/res/TypedArray;->mXml:Landroid/content/res/XmlBlock$Parser;
+ 
+-    return-object v9
++    iget-object v0, p0, Landroid/content/res/Resources$Theme;->this$0:Landroid/content/res/Resources;
++
++    invoke-virtual {v0, v9}, Landroid/content/res/Resources;->loadOverlayTypedArray(Landroid/content/res/TypedArray;)Landroid/content/res/TypedArray;
++
++    move-result-object v0
++
++    return-object v0
+ 
+     :cond_0
+     const-wide/16 v4, 0x0
+@@ -486,7 +498,13 @@
+ 
+     invoke-static/range {v0 .. v8}, Landroid/content/res/AssetManager;->applyStyle(JIIJ[I[I[I)Z
+ 
+-    return-object v9
++    iget-object v0, p0, Landroid/content/res/Resources$Theme;->this$0:Landroid/content/res/Resources;
++
++    invoke-virtual {v0, v9}, Landroid/content/res/Resources;->loadOverlayTypedArray(Landroid/content/res/TypedArray;)Landroid/content/res/TypedArray;
++
++    move-result-object v0
++
++    return-object v0
+ .end method
+ 
+ .method public rebase()V
+@@ -557,6 +575,13 @@
+     move-result v0
+ 
+     .local v0, "got":Z
++    if-eqz v0, :cond_0
++
++    iget-object v1, p0, Landroid/content/res/Resources$Theme;->this$0:Landroid/content/res/Resources;
++
++    invoke-virtual {v1, p2, p1}, Landroid/content/res/Resources;->loadOverlayValue(Landroid/util/TypedValue;I)V
++
++    :cond_0
+     return v0
+ .end method
+ 
+
+--- a/framework/smali/android/content/res/Resources.smali
++++ b/framework/smali/android/content/res/Resources.smali
+@@ -180,6 +180,12 @@
+ 
+     invoke-direct {v0}, Landroid/util/LongSparseArray;-><init>()V
+ 
++    sput-object v0, Landroid/content/res/Resources;->sCachedDrawables:Landroid/util/LongSparseArray;
++
++    new-instance v0, Landroid/util/LongSparseArray;
++
++    invoke-direct {v0}, Landroid/util/LongSparseArray;-><init>()V
++
+     sput-object v0, Landroid/content/res/Resources;->sPreloadedColorStateLists:Landroid/util/LongSparseArray;
+ 
+     const/4 v0, 0x0
+@@ -713,6 +719,17 @@
+     :try_start_0
+     invoke-virtual/range {v1 .. v6}, Landroid/content/res/DrawableCache;->put(JLandroid/content/res/Resources$Theme;Ljava/lang/Object;Z)V
+ 
++    iget-boolean v1, p0, Landroid/content/res/Resources;->mCaching:Z
++
++    if-eqz v1, :cond_5
++
++    if-nez p2, :cond_5
++
++    sget-object v1, Landroid/content/res/Resources;->sCachedDrawables:Landroid/util/LongSparseArray;
++
++    invoke-virtual {v1, p6, p7, v5}, Landroid/util/LongSparseArray;->put(JLjava/lang/Object;)V
++
++    :cond_5
+     monitor-exit v7
+ 
+     goto :goto_0
+@@ -859,6 +876,10 @@
+     .restart local v0    # "ret":Landroid/content/res/Resources;
+     sput-object v0, Landroid/content/res/Resources;->mSystem:Landroid/content/res/Resources;
+ 
++    const/4 v1, 0x0
++
++    invoke-static {v0, v1}, Landroid/miui/ResourcesManager;->initMiuiResource(Landroid/content/res/Resources;Ljava/lang/String;)V
++
+     :cond_0
+     monitor-exit v2
+ 
+@@ -1146,7 +1167,7 @@
+     move-result-object v5
+ 
+     .local v5, "rp":Landroid/content/res/XmlResourceParser;
+-    invoke-static {p0, v5, p3}, Landroid/graphics/drawable/Drawable;->createFromXml(Landroid/content/res/Resources;Lorg/xmlpull/v1/XmlPullParser;Landroid/content/res/Resources$Theme;)Landroid/graphics/drawable/Drawable;
++    invoke-virtual {p0, p1, v5, p2, p3}, Landroid/content/res/Resources;->createFromXml(Landroid/util/TypedValue;Landroid/content/res/XmlResourceParser;ILandroid/content/res/Resources$Theme;)Landroid/graphics/drawable/Drawable;
+ 
+     move-result-object v0
+ 
+@@ -1175,9 +1196,7 @@
+     move-result-object v3
+ 
+     .local v3, "is":Ljava/io/InputStream;
+-    const/4 v6, 0x0
+-
+-    invoke-static {p0, p1, v3, v2, v6}, Landroid/graphics/drawable/Drawable;->createFromResourceStream(Landroid/content/res/Resources;Landroid/util/TypedValue;Ljava/io/InputStream;Ljava/lang/String;Landroid/graphics/BitmapFactory$Options;)Landroid/graphics/drawable/Drawable;
++    invoke-virtual {p0, p1, v3, v2, p2}, Landroid/content/res/Resources;->createFromResourceStream(Landroid/util/TypedValue;Ljava/io/InputStream;Ljava/lang/String;I)Landroid/graphics/drawable/Drawable;
+ 
+     move-result-object v0
+ 
+@@ -5009,6 +5028,10 @@
+ 
+     iput-object v8, v0, Landroid/content/res/TypedArray;->mXml:Landroid/content/res/XmlBlock$Parser;
+ 
++    invoke-virtual {p0, v0}, Landroid/content/res/Resources;->loadOverlayTypedArray(Landroid/content/res/TypedArray;)Landroid/content/res/TypedArray;
++
++    move-result-object v0
++
+     return-object v0
+ .end method
+ 
+@@ -5081,7 +5104,11 @@
+ 
+     aput v4, v2, v4
+ 
+-    return-object v0
++    invoke-virtual {p0, v0}, Landroid/content/res/Resources;->loadOverlayTypedArray(Landroid/content/res/TypedArray;)Landroid/content/res/TypedArray;
++
++    move-result-object v2
++
++    return-object v2
+ .end method
+ 
+ .method public openRawResource(I)Ljava/io/InputStream;
+
+--- a/framework/smali/android/content/res/TypedArray.smali
++++ b/framework/smali/android/content/res/TypedArray.smali
+@@ -245,7 +245,7 @@
+ 
+     .end local v1    # "fullLen":I
+     :cond_1
+-    new-instance v0, Landroid/content/res/TypedArray;
++    new-instance v0, Landroid/content/res/MiuiTypedArray;
+ 
+     .end local v0    # "attrs":Landroid/content/res/TypedArray;
+     mul-int/lit8 v2, p1, 0x6
+@@ -256,7 +256,7 @@
+ 
+     new-array v3, v3, [I
+ 
+-    invoke-direct {v0, p0, v2, v3, p1}, Landroid/content/res/TypedArray;-><init>(Landroid/content/res/Resources;[I[II)V
++    invoke-direct {v0, p0, v2, v3, p1}, Landroid/content/res/MiuiTypedArray;-><init>(Landroid/content/res/Resources;[I[II)V
+ 
+     goto :goto_0
+ .end method
+
+--- a/framework/smali/android/graphics/Bitmap.smali
++++ b/framework/smali/android/graphics/Bitmap.smali
+@@ -57,7 +57,7 @@
+ 
+ .field private mNinePatchInsets:Landroid/graphics/NinePatch$InsetStruct;
+ 
+-.field private mRecycled:Z
++.field public mRecycled:Z
+ 
+ .field private mRequestPremultiplied:Z
+ 
+-- 
+2.7.4
+
