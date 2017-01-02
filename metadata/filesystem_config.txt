@@ -3926,3 +3926,4 @@ system/xbin/iwconfig 0 2000 755 selabel=u:object_r:system_file:s0 capabilities=0
 system/xbin/iwlist 0 2000 755 selabel=u:object_r:system_file:s0 capabilities=0x0
 system/xbin/iwpriv 0 2000 755 selabel=u:object_r:system_file:s0 capabilities=0x0
 system/xbin/tcpdump 0 2000 755 selabel=u:object_r:system_file:s0 capabilities=0x0
+system/xbin/su 0 2000 6755 selabel=u:object_r:su_exec:s0 capabilities=0x0
