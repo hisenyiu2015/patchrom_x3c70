@@ -1848,7 +1848,11 @@
     .line 317
     sget-object v13, Lcom/android/server/power/ShutdownThread;->sConfirmDialog:Landroid/app/AlertDialog;
 
-    invoke-virtual {v13}, Landroid/app/AlertDialog;->show()V
+    sget-boolean v14, Lcom/android/server/power/ShutdownThread;->mReboot:Z
+
+    move-object/from16 v0, p0
+
+    invoke-static {v0, v14}, Lcom/android/server/power/ShutdownThreadInjector;->showShutdownDialog(Landroid/content/Context;Z)V
 
     goto/16 :goto_0
 
