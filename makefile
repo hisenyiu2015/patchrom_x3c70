@@ -17,7 +17,7 @@ local-modified-apps :=
 local-modified-jars := 
 
 # All apks from MIUI
-local-miui-removed-apps := 
+local-miui-removed-apps := FM 
 
 local-miui-modified-apps := TeleService InCallUI SecurityCenter 
 
