@@ -9000,7 +9000,7 @@
 
     aput-object v7, v5, v6
 
-    invoke-static {v4, v5}, Landroid/util/EventLog;->writeEvent(I[Ljava/lang/Object;)I
+    invoke-static/range {p1 .. p1}, Lcom/android/server/am/ActivityStackHook;->writeAmRestartActivityEventLog(Lcom/android/server/am/ActivityRecord;)V
 
     .line 1296
     :cond_8

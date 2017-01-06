@@ -9841,6 +9841,12 @@
 
     if-eqz v0, :cond_0
 
+    invoke-static {v7, p3}, Lcom/android/server/pm/SettingsInjector;->checkXSpaceApp(Lcom/android/server/pm/PackageSetting;I)Z
+
+    move-result v0
+
+    if-nez v0, :cond_miui_0
+
     .line 3690
     iget v0, v7, Lcom/android/server/pm/PackageSetting;->pkgFlags:I
 
@@ -9853,7 +9859,7 @@
     :goto_1
     invoke-virtual {v7, v0, p3}, Lcom/android/server/pm/PackageSetting;->setInstalled(ZI)V
 
-    .line 3692
+    :cond_miui_0
     iget-object v1, v7, Lcom/android/server/pm/PackageSetting;->volumeUuid:Ljava/lang/String;
 
     iget-object v2, v7, Lcom/android/server/pm/PackageSetting;->name:Ljava/lang/String;
