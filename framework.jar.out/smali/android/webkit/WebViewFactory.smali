@@ -756,6 +756,18 @@
     .end local v2    # "providerClass":Ljava/lang/Class;, "Ljava/lang/Class<Landroid/webkit/WebViewFactoryProvider;>;"
     .end local v3    # "uid":I
     :cond_0
+    const-string v4, "com.android.thememanager"
+
+    invoke-static {}, Landroid/app/ActivityThread;->currentProcessName()Ljava/lang/String;
+
+    move-result-object v6
+
+    invoke-virtual {v4, v6}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+
+    move-result v4
+
+    if-nez v4, :cond_2
+
     invoke-static {}, Landroid/os/Process;->myUid()I
 
     move-result v3
