@@ -1,0 +1,68 @@
+From bae1f8fd39dd35f7494224f1219a77e59370ca0d Mon Sep 17 00:00:00 2001
+From: garyyiu2015 <garyyiu2015@gmail.com>
+Date: Fri, 24 Feb 2017 14:16:12 +0800
+Subject: [PATCH] support remove some miui packages
+
+---
+ .../com/miui/server/SecurityManagerService$1.smali | 22 +++++++++++-----------
+ 1 file changed, 11 insertions(+), 11 deletions(-)
+
+--- a/services/smali/com/miui/server/SecurityManagerService$1.smali
++++ b/services/smali/com/miui/server/SecurityManagerService$1.smali
+@@ -114,9 +114,9 @@
+ 
+     invoke-virtual {v2, v11}, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z
+ 
+-    const-string v11, "com.android.updater"
++    # const-string v11, "com.android.updater"
+ 
+-    invoke-virtual {v2, v11}, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z
++    # invoke-virtual {v2, v11}, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z
+ 
+     const-string v11, "com.miui.securitycenter"
+ 
+@@ -183,12 +183,12 @@
+     .restart local v4    # "i$":Ljava/util/Iterator;
+     .restart local v7    # "platformSignature":[Landroid/content/pm/Signature;
+     :cond_1
+-    iget-object v11, p0, Lcom/miui/server/SecurityManagerService$1;->this$0:Lcom/miui/server/SecurityManagerService;
++    # iget-object v11, p0, Lcom/miui/server/SecurityManagerService$1;->this$0:Lcom/miui/server/SecurityManagerService;
+ 
+-    const-string v12, "com.android.updater"
++    # const-string v12, "com.android.updater"
+ 
+     # invokes: Lcom/miui/server/SecurityManagerService;->enforceAppSignature([Landroid/content/pm/Signature;Ljava/lang/String;Z)V
+-    invoke-static {v11, v7, v12, v9}, Lcom/miui/server/SecurityManagerService;->access$1500(Lcom/miui/server/SecurityManagerService;[Landroid/content/pm/Signature;Ljava/lang/String;Z)V
++    # invoke-static {v11, v7, v12, v9}, Lcom/miui/server/SecurityManagerService;->access$1500(Lcom/miui/server/SecurityManagerService;[Landroid/content/pm/Signature;Ljava/lang/String;Z)V
+ 
+     iget-object v11, p0, Lcom/miui/server/SecurityManagerService$1;->this$0:Lcom/miui/server/SecurityManagerService;
+ 
+@@ -216,19 +216,19 @@
+ 
+     if-nez v11, :cond_2
+ 
+-    iget-object v11, p0, Lcom/miui/server/SecurityManagerService$1;->this$0:Lcom/miui/server/SecurityManagerService;
++    # iget-object v11, p0, Lcom/miui/server/SecurityManagerService$1;->this$0:Lcom/miui/server/SecurityManagerService;
+ 
+-    const-string v12, "com.xiaomi.market"
++    # const-string v12, "com.xiaomi.market"
+ 
+     # invokes: Lcom/miui/server/SecurityManagerService;->checkEnabled(Landroid/content/pm/PackageManager;Ljava/lang/String;)V
+-    invoke-static {v11, v8, v12}, Lcom/miui/server/SecurityManagerService;->access$1400(Lcom/miui/server/SecurityManagerService;Landroid/content/pm/PackageManager;Ljava/lang/String;)V
++    # invoke-static {v11, v8, v12}, Lcom/miui/server/SecurityManagerService;->access$1400(Lcom/miui/server/SecurityManagerService;Landroid/content/pm/PackageManager;Ljava/lang/String;)V
+ 
+-    iget-object v11, p0, Lcom/miui/server/SecurityManagerService$1;->this$0:Lcom/miui/server/SecurityManagerService;
++    # iget-object v11, p0, Lcom/miui/server/SecurityManagerService$1;->this$0:Lcom/miui/server/SecurityManagerService;
+ 
+-    const-string v12, "com.xiaomi.market"
++    # const-string v12, "com.xiaomi.market"
+ 
+     # invokes: Lcom/miui/server/SecurityManagerService;->enforceAppSignature([Landroid/content/pm/Signature;Ljava/lang/String;Z)V
+-    invoke-static {v11, v7, v12, v10}, Lcom/miui/server/SecurityManagerService;->access$1500(Lcom/miui/server/SecurityManagerService;[Landroid/content/pm/Signature;Ljava/lang/String;Z)V
++    # invoke-static {v11, v7, v12, v10}, Lcom/miui/server/SecurityManagerService;->access$1500(Lcom/miui/server/SecurityManagerService;[Landroid/content/pm/Signature;Ljava/lang/String;Z)V
+ 
+     :cond_2
+     iget-object v11, p0, Lcom/miui/server/SecurityManagerService$1;->this$0:Lcom/miui/server/SecurityManagerService;
+-- 
+2.7.4
+
